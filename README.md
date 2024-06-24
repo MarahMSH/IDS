@@ -1,12 +1,12 @@
 # IDS
 
-1- The Phishin_email dataset is too large i was unable to upload it to github here is a drive link for it
+1- The Phishing_email dataset is too large i was unable to upload it to GitHub, here is a drive link for it
 
 https://drive.google.com/file/d/1UY0cumK0iFRM19Ql2kF8Rg4AD58hRmS6/view?usp=sharing
 
-2- To run the code use the colab (cloud-based python environment) and connect it to your actual hardware resources.
+2- To run the code use the Google Colab (cloud-based Python environment) and connect it to your actual hardware resources.
 
-3- Connect your colab with your google drive that you should upload datasets on, using this code:
+3- Connect your Colab with your Google Drive that you should upload datasets on, using this code:
 
 from google.colab import drive
 drive.mount('/content/drive')
