@@ -1,4 +1,4 @@
-# IDS
+# Run the NLP_LSTM-SVM code
 
 1- The Phishing_email dataset is too large i was unable to upload it to GitHub, here is a drive link for it
 
