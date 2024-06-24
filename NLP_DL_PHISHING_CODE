@@ -1,0 +1,139 @@
+import pandas as pd
+import numpy as np
+import re
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.feature_selection import SelectKBest, chi2
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import StackingClassifier
+from keras.models import Sequential
+from keras.layers import Embedding, LSTM, Dense, SpatialDropout1D
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix
+import nltk
+from nltk.corpus import stopwords
+
+
+nltk.download('stopwords')
+stop_words = set(stopwords.words('english'))
+
+# Load datasets
+spambase = pd.read_csv('path_to_spambase.csv')  # Replace with actual path
+phishing_email = pd.read_csv('path_to_phishing_email.csv')  # Replace with actual path
+sms_spam = pd.read_csv('path_to_sms_spam.csv')  # Replace with actual path
+
+
+def standardize_labels(df, spam_labels, ham_labels):
+    df['label'] = df['label'].apply(lambda x: 1 if x in spam_labels else 0)
+    return df
+
+# # Standardize labels
+phishing_email = standardize_labels(phishing_email, spam_labels=['phishing'], ham_labels=['legitimate'])
+sms_spam = standardize_labels(sms_spam, spam_labels=['spam'], ham_labels=['ham'])
+
+# Combine text-based datasets
+combined_text_data = pd.concat([phishing_email, sms_spam], ignore_index=True)
+
+# Preprocess text
+def preprocess_text(text):
+    if not isinstance(text, str):
+        text = str(text)
+    text = re.sub(r"http\S+", "", text)  # Remove URLs
+    text = re.sub(r'<.*?>', '', text)  # Remove HTML tags
+    text = re.sub(r'[^\w\s]', '', text)  # Remove punctuations
+    text = text.lower()  # Lowercase
+    text = ' '.join([word for word in text.split() if word not in stop_words])  # Remove stop words
+    return text
+
+combined_text_data['text'] = combined_text_data['text'].apply(preprocess_text)
+
+def extract_url_html_features(text):
+    urls = re.findall(r'http\S+', text)
+    url_count = len(urls)
+    url_lengths = [len(url) for url in urls]
+    
+    html_tags = re.findall(r'<.*?>', text)
+    html_tag_count = len(html_tags)
+    
+    specific_tags = ['<script>', '<iframe>', '<form>']
+    specific_tag_count = sum(text.count(tag) for tag in specific_tags)
+    
+    return url_count, url_lengths, html_tag_count, specific_tag_count
+
+combined_text_data['url_count'], combined_text_data['url_lengths'], combined_text_data['html_tag_count'], combined_text_data['specific_tag_count'] = zip(*combined_text_data['text'].apply(extract_url_html_features))
+
+scaler = MinMaxScaler()
+combined_text_data[['url_count', 'html_tag_count']] = scaler.fit_transform(combined_text_data[['url_count', 'html_tag_count']])
+
+
+# Extract features using TF-IDF for SVM
+tfidf_vectorizer = TfidfVectorizer(max_features=3000)
+X_tfidf = tfidf_vectorizer.fit_transform(combined_text_data['text'])
+
+# Feature selection using Chi-square
+chi2_selector = SelectKBest(chi2, k=500)
+X_chi2 = chi2_selector.fit_transform(X_tfidf, combined_text_data['label'])
+
+# Tokenize for LSTM
+tokenizer = Tokenizer(num_words=3000)
+tokenizer.fit_on_texts(combined_text_data['text'])
+X_tokenized = tokenizer.texts_to_sequences(combined_text_data['text'])
+X_padded = pad_sequences(X_tokenized, maxlen=100)
+
+# Combine TF-IDF with extracted features
+X_combined_features = np.hstack((X_chi2, combined_text_data[['url_count', 'html_tag_count']].values))
+
+# Label encoding for text-based datasets
+label_encoder = LabelEncoder()
+y_combined_text = label_encoder.fit_transform(combined_text_data['label'])
+
+X_train_combined, X_test_combined, y_train_combined, y_test_combined = train_test_split(X_combined_features, y_combined_text, test_size=0.2, random_state=42)
+X_train_padded, X_test_padded, y_train_padded, y_test_padded = train_test_split(X_padded, y_combined_text, test_size=0.2, random_state=42)
+
+# Process Spambase dataset
+X_spambase = spambase.iloc[:, :-1].values  # Features
+y_spambase = spambase.iloc[:, -1].values  # Labels
+
+X_train_spambase, X_test_spambase, y_train_spambase, y_test_spambase = train_test_split(X_spambase, y_spambase, test_size=0.2, random_state=42)
+
+# Combine TF-IDF features with Spambase features
+X_combined_train = np.hstack((X_train_combined, X_train_spambase))
+X_combined_test = np.hstack((X_test_combined, X_test_spambase))
+
+# Train SVM Model on combined features
+svm_model = SVC(kernel='linear', probability=True)
+svm_model.fit(X_combined_train, y_train_combined)
+
+# LSTM Model
+lstm_model = Sequential()
+lstm_model.add(Embedding(input_dim=3000, output_dim=128, input_length=100))
+lstm_model.add(SpatialDropout1D(0.2))
+lstm_model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
+lstm_model.add(Dense(1, activation='sigmoid'))
+
+lstm_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+lstm_model.fit(X_train_padded, y_train_padded, epochs=10, batch_size=64, validation_data=(X_test_padded, y_test_padded))
+
+# Predictions from LSTM and SVM
+lstm_train_preds = lstm_model.predict(X_train_padded).flatten()
+lstm_test_preds = lstm_model.predict(X_test_padded).flatten()
+
+svm_train_preds = svm_model.predict_proba(X_combined_train)[:, 1]
+svm_test_preds = svm_model.predict_proba(X_combined_test)[:, 1]
+
+# Combine predictions for stacking
+train_preds_combined = np.column_stack((lstm_train_preds, svm_train_preds))
+test_preds_combined = np.column_stack((lstm_test_preds, svm_test_preds))
+
+# LogisticRegression
+stacking_model = LogisticRegression()
+stacking_model.fit(train_preds_combined, y_train_combined)
+
+# Final predictions
+final_train_preds = stacking_model.predict(train_preds_combined)
+final_test_preds = stacking_model.predict(test_preds_combined)
+
+
