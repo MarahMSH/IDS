@@ -1,12 +1,9 @@
-# Print selected features for verification
 selected_features = tfidf_vectorizer.get_feature_names_out()
 print(f"Selected features (total {len(selected_features)}):")
 print(selected_features)
 
-# Alternatively, visualize the top 20 features by their importance
 import matplotlib.pyplot as plt
 
-# Get the TF-IDF scores for each feature
 feature_scores = np.sum(X_tfidf, axis=0).A1
 feature_importance = pd.DataFrame({'Feature': selected_features, 'Importance': feature_scores})
 feature_importance = feature_importance.sort_values(by='Importance', ascending=False).head(20)
@@ -27,7 +24,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import ConfusionMatrixDisplay
 
-# Evaluate the model
 def evaluate_model(y_true, y_pred):
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred)
@@ -46,13 +42,13 @@ print(f'Test Precision: {test_precision:.2f}')
 print(f'Test Recall: {test_recall:.2f}')
 print(f'Test F1: {test_f1:.2f}')
 
-# Plot the confusion matrix
+# confusion matrix
 fig, ax = plt.subplots(figsize=(8, 6))
 ConfusionMatrixDisplay(test_conf_matrix, display_labels=['Actual Negative', 'Actual Positive']).plot(ax=ax)
 plt.title('Confusion Matrix')
 plt.show()
 
-# Plotting the accuracy and other metrics
+# Plotting metrics
 metrics = {
     'Model': ['Hybrid LSTM-SVM'],
     'Accuracy': [test_accuracy],
@@ -70,7 +66,6 @@ plt.ylim(0.9, 1)
 plt.title('Accuracy Comparison')
 plt.show()
 
-# Plot Precision, Recall, and F1-Score in one chart
 metrics_df_melted = metrics_df.melt(id_vars='Model', value_vars=['Precision', 'Recall', 'F1-Score'], 
                                     var_name='Metric', value_name='Score')
 
