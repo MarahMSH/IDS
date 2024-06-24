@@ -21,9 +21,9 @@ nltk.download('stopwords')
 stop_words = set(stopwords.words('english'))
 
 # Load datasets
-spambase = pd.read_csv('path_to_spambase.csv')  # Replace with actual path
-phishing_email = pd.read_csv('path_to_phishing_email.csv')  # Replace with actual path
-sms_spam = pd.read_csv('path_to_sms_spam.csv')  # Replace with actual path
+spambase = pd.read_csv('path_to_spambase.csv')  # Replace with your drive actual path
+phishing_email = pd.read_csv('path_to_phishing_email.csv')  # Replace with your drive actual path
+sms_spam = pd.read_csv('path_to_sms_spam.csv')  # Replace with your drive actual path
 
 
 def standardize_labels(df, spam_labels, ham_labels):
