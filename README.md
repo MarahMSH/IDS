@@ -5,7 +5,9 @@
 https://drive.google.com/file/d/1UY0cumK0iFRM19Ql2kF8Rg4AD58hRmS6/view?usp=sharing
 
 2- To run the code use the Google Colab (cloud-based Python environment) and connect it to your actual hardware resources.
-3- Upload the datasets on your Google Drive
+
+
+3- Upload the datasets on your Google Drive.
 
 4- Connect your Colab with your Google Drive you should upload datasets, using this code:
 
