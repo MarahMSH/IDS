@@ -18,5 +18,10 @@ drive.mount('/content/drive')
 
 - smsspam_DS=pd.read_csv('/content/drive/MyDrive/DATASET/smsspamcollection.tsv',sep='\t') # change the path 
 - Phishing_DS = pd.read_csv('/content/drive/MyDrive/DATASET/Phishing_Email.csv') # change the path
-- spambase_DS=pd.read_csv('/content/drive/MyDrive/DATASET/spambase.csv') # change the path 
+- spambase_DS=pd.read_csv('/content/drive/MyDrive/DATASET/spambase.csv') # change the path
 
+
+NOTES:
+1- file NLP_DL_PHISHING_CODE includes the main model's code.
+2- file Evaluation_Part_Code includes the evaluation code set of the model including the plotting you can run it after the main code to visualize the results.
+3- the spambase.csv, and smsspamcollection.tsv are the datasets used.
