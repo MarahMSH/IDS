@@ -22,6 +22,9 @@ drive.mount('/content/drive')
 
 
 NOTES:
+
 1- file NLP_DL_PHISHING_CODE includes the main model's code.
+
 2- file Evaluation_Part_Code includes the evaluation code set of the model including the plotting you can run it after the main code to visualize the results.
+
 3- the spambase.csv, and smsspamcollection.tsv are the datasets used.
